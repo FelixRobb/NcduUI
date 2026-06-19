@@ -5,6 +5,7 @@ import SwiftUI
 /// correct axis natively — no AppKit scroll-event bridge required.
 struct ColumnBrowserView: View {
     @Environment(ScanViewModel.self) private var model
+    @FocusState private var keyboardFocused: Bool
 
     private let columnWidth: CGFloat = 400
 
@@ -39,7 +40,30 @@ struct ColumnBrowserView: View {
             }
         }
         .focusable()
+        .focused($keyboardFocused)
         .focusEffectDisabled()
+        .onAppear { keyboardFocused = true }
+        .onTapGesture { keyboardFocused = true }
+        .onKeyPress(.upArrow) {
+            guard keyboardFocused else { return .ignored }
+            model.navigateColumnSelection(.up)
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            guard keyboardFocused else { return .ignored }
+            model.navigateColumnSelection(.down)
+            return .handled
+        }
+        .onKeyPress(.leftArrow) {
+            guard keyboardFocused else { return .ignored }
+            model.navigateColumnSelection(.left)
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            guard keyboardFocused else { return .ignored }
+            model.navigateColumnSelection(.right)
+            return .handled
+        }
         .onKeyPress(.return) {
             model.openFocusedItem()
             return model.focusedNode != nil ? .handled : .ignored
@@ -56,26 +80,41 @@ struct ColumnBrowserView: View {
         let maxSize = model.maxChildSize(of: dir)
         let parentTotal = max(model.size(of: dir), 1)
 
-        return ScrollView(.vertical, showsIndicators: true) {
-            LazyVStack(spacing: 2) {
-                ForEach(children) { node in
-                    let sz = model.size(of: node)
-                    let isSelected = model.selection(inColumnAt: index) === node
-                    ColumnFileRowView(
-                        node: node,
-                        displaySize: sz,
-                        fraction: maxSize > 0 ? Double(sz) / Double(maxSize) : 0,
-                        percent: Double(sz) / Double(parentTotal) * 100,
-                        dimmed: model.isHidden(node) || node.isExcluded,
-                        isSelected: isSelected
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture { model.select(node, inColumnAt: index) }
-                    .contextMenu { contextMenu(for: node) }
+        return ScrollViewReader { rowProxy in
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVStack(spacing: 2) {
+                    ForEach(children) { node in
+                        let sz = model.size(of: node)
+                        let isSelected = model.selection(inColumnAt: index) === node
+                        ColumnFileRowView(
+                            node: node,
+                            displaySize: sz,
+                            fraction: maxSize > 0 ? Double(sz) / Double(maxSize) : 0,
+                            percent: Double(sz) / Double(parentTotal) * 100,
+                            dimmed: model.isHidden(node) || node.isExcluded,
+                            isSelected: isSelected
+                        )
+                        .id(node.id)
+                        .contentShape(Rectangle())
+                        .onTapGesture { model.select(node, inColumnAt: index) }
+                        .contextMenu { contextMenu(for: node) }
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 10)
+            }
+            .onChange(of: model.focusedNode?.id) { _, _ in
+                guard let selected = model.selection(inColumnAt: index) else { return }
+                withAnimation(.easeOut(duration: 0.15)) {
+                    rowProxy.scrollTo(selected.id, anchor: .center)
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 10)
+            .onChange(of: model.path.count) { _, _ in
+                guard let selected = model.selection(inColumnAt: index) else { return }
+                withAnimation(.easeOut(duration: 0.15)) {
+                    rowProxy.scrollTo(selected.id, anchor: .center)
+                }
+            }
         }
         .clipped()
         .background(Color(nsColor: .windowBackgroundColor))

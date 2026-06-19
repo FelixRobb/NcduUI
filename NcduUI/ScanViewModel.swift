@@ -162,12 +162,101 @@ final class ScanViewModel {
     }
 
     /// The item highlighted in the column at `columnIndex`, if any.
+    ///
+    /// Column `i` lists children of `path[i]`. The selection is either the
+    /// drilled-in folder `path[i + 1]` or a focused child of `path[i]`.
     func selection(inColumnAt columnIndex: Int) -> FileNode? {
+        guard columnIndex < path.count else { return nil }
         if columnIndex + 1 < path.count { return path[columnIndex + 1] }
-        if let focusedNode, columnIndex < path.count, focusedNode.parent === path[columnIndex] {
+        if let focusedNode,
+           focusedNode !== path[columnIndex],
+           focusedNode.parent === path[columnIndex] {
             return focusedNode
         }
         return nil
+    }
+
+    enum ColumnNavigationDirection {
+        case up, down, left, right
+    }
+
+    /// Move the column-browser selection with arrow keys (Finder-style).
+    func navigateColumnSelection(_ direction: ColumnNavigationDirection) {
+        guard phase == .ready, !path.isEmpty else { return }
+
+        switch direction {
+        case .up, .down:
+            guard let columnIndex = activeColumnIndex() else { return }
+            let isLast = columnIndex == path.count - 1
+            let children = columnChildren(of: path[columnIndex], isLast: isLast)
+            guard !children.isEmpty else { return }
+
+            if let current = selection(inColumnAt: columnIndex),
+               let idx = children.firstIndex(where: { $0 === current }) {
+                let next = direction == .up ? max(0, idx - 1) : min(children.count - 1, idx + 1)
+                guard next != idx else { return }
+                select(children[next], inColumnAt: columnIndex)
+            } else {
+                let idx = direction == .up ? children.count - 1 : 0
+                select(children[idx], inColumnAt: columnIndex)
+            }
+
+        case .left:
+            guard let columnIndex = activeColumnIndex() else { return }
+            if columnIndex == 0 {
+                if path.count > 1 {
+                    let current = selection(inColumnAt: 0)
+                    path = [path[0]]
+                    focusedNode = current ?? path[0]
+                } else {
+                    focusedNode = path[0]
+                }
+                return
+            }
+            let openedFolder = path[columnIndex]
+            path = Array(path.prefix(columnIndex))
+            focusedNode = openedFolder
+
+        case .right:
+            guard let columnIndex = activeColumnIndex(),
+                  let selected = selection(inColumnAt: columnIndex),
+                  selected.isDirectory else { return }
+
+            if columnIndex + 1 >= path.count || path[columnIndex + 1] !== selected {
+                path = Array(path.prefix(columnIndex + 1)) + [selected]
+            }
+
+            let childColumn = columnIndex + 1
+            let isLast = childColumn == path.count - 1
+            let children = columnChildren(of: path[childColumn], isLast: isLast)
+            guard let first = children.first else {
+                focusedNode = selected
+                return
+            }
+            select(first, inColumnAt: childColumn)
+        }
+    }
+
+    /// The column whose list currently contains the keyboard highlight.
+    ///
+    /// `path[k]` for `k > 0` is shown in column `k - 1`; children of `path[k]`
+    /// are shown in column `k`.
+    private func activeColumnIndex() -> Int? {
+        guard !path.isEmpty else { return nil }
+        guard let focusedNode else { return 0 }
+
+        if focusedNode === path[0] { return 0 }
+
+        if let pathIndex = path.firstIndex(where: { $0 === focusedNode }), pathIndex > 0 {
+            return pathIndex - 1
+        }
+
+        if let parent = focusedNode.parent,
+           let columnIndex = path.firstIndex(where: { $0 === parent }) {
+            return columnIndex
+        }
+
+        return 0
     }
 
     /// Jump straight to a node in the column browser (from the overview).
