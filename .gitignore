@@ -1,0 +1,8 @@
+.build/
+.vscode/
+.DS_Store
+DerivedData/
+*.xcarchive
+xcuserdata/
+
+/build

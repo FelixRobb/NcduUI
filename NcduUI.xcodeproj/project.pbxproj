@@ -1,0 +1,330 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BD0000000000000000000001 /* NcduUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000001 /* NcduUIApp.swift */; };
+		BD0000000000000000000002 /* FileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000002 /* FileNode.swift */; };
+		BD0000000000000000000003 /* ScanOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000003 /* ScanOptions.swift */; };
+		BD0000000000000000000004 /* SizeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000004 /* SizeFormatter.swift */; };
+		BD0000000000000000000005 /* DiskScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000005 /* DiskScanner.swift */; };
+		BD0000000000000000000006 /* ScanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000006 /* ScanViewModel.swift */; };
+		BD0000000000000000000007 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000007 /* ContentView.swift */; };
+		BD0000000000000000000008 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000008 /* WelcomeView.swift */; };
+		BD0000000000000000000009 /* ScanProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000009 /* ScanProgressView.swift */; };
+		BD000000000000000000000A /* BreadcrumbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000000A /* BreadcrumbView.swift */; };
+		BD000000000000000000000B /* ColumnBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000000B /* ColumnBrowserView.swift */; };
+		BD000000000000000000000C /* FileRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000000C /* FileRowView.swift */; };
+		BD000000000000000000000D /* InfoPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000000D /* InfoPanelView.swift */; };
+		BD000000000000000000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AC000000000000000000000E /* Assets.xcassets */; };
+		BD0000000000000000000010 /* JunkAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000010 /* JunkAnalyzer.swift */; };
+		BD0000000000000000000011 /* TreemapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000011 /* TreemapView.swift */; };
+		BD0000000000000000000012 /* OverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000012 /* OverviewView.swift */; };
+		BD0000000000000000000013 /* ScanFiltersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000013 /* ScanFiltersView.swift */; };
+		BD0000000000000000000014 /* FullDiskAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000014 /* FullDiskAccess.swift */; };
+		BD0000000000000000000015 /* FullDiskAccessGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000015 /* FullDiskAccessGuideView.swift */; };
+		BD0000000000000000000016 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000000000000000016 /* AppCommands.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AB00000000000000000000FE /* NcduUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NcduUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC0000000000000000000001 /* NcduUIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NcduUIApp.swift; sourceTree = "<group>"; };
+		AC0000000000000000000002 /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
+		AC0000000000000000000003 /* ScanOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanOptions.swift; sourceTree = "<group>"; };
+		AC0000000000000000000004 /* SizeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SizeFormatter.swift; sourceTree = "<group>"; };
+		AC0000000000000000000005 /* DiskScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskScanner.swift; sourceTree = "<group>"; };
+		AC0000000000000000000006 /* ScanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanViewModel.swift; sourceTree = "<group>"; };
+		AC0000000000000000000007 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AC0000000000000000000008 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		AC0000000000000000000009 /* ScanProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanProgressView.swift; sourceTree = "<group>"; };
+		AC000000000000000000000A /* BreadcrumbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreadcrumbView.swift; sourceTree = "<group>"; };
+		AC000000000000000000000B /* ColumnBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColumnBrowserView.swift; sourceTree = "<group>"; };
+		AC000000000000000000000C /* FileRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRowView.swift; sourceTree = "<group>"; };
+		AC000000000000000000000D /* InfoPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoPanelView.swift; sourceTree = "<group>"; };
+		AC000000000000000000000E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AC000000000000000000000F /* NcduUI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NcduUI.entitlements; sourceTree = "<group>"; };
+		AC0000000000000000000010 /* JunkAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkAnalyzer.swift; sourceTree = "<group>"; };
+		AC0000000000000000000011 /* TreemapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreemapView.swift; sourceTree = "<group>"; };
+		AC0000000000000000000012 /* OverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewView.swift; sourceTree = "<group>"; };
+		AC0000000000000000000013 /* ScanFiltersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanFiltersView.swift; sourceTree = "<group>"; };
+		AC0000000000000000000014 /* FullDiskAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullDiskAccess.swift; sourceTree = "<group>"; };
+		AC0000000000000000000015 /* FullDiskAccessGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullDiskAccessGuideView.swift; sourceTree = "<group>"; };
+		AC0000000000000000000016 /* AppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommands.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AB00000000000000000000F6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AB00000000000000000000F1 = {
+			isa = PBXGroup;
+			children = (
+				AB00000000000000000000F2 /* NcduUI */,
+				AB00000000000000000000F3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AB00000000000000000000F2 /* NcduUI */ = {
+			isa = PBXGroup;
+			children = (
+				AC0000000000000000000001 /* NcduUIApp.swift */,
+				AC0000000000000000000002 /* FileNode.swift */,
+				AC0000000000000000000003 /* ScanOptions.swift */,
+				AC0000000000000000000004 /* SizeFormatter.swift */,
+				AC0000000000000000000005 /* DiskScanner.swift */,
+				AC0000000000000000000006 /* ScanViewModel.swift */,
+				AC0000000000000000000007 /* ContentView.swift */,
+				AC0000000000000000000008 /* WelcomeView.swift */,
+				AC0000000000000000000009 /* ScanProgressView.swift */,
+				AC000000000000000000000A /* BreadcrumbView.swift */,
+				AC000000000000000000000B /* ColumnBrowserView.swift */,
+				AC000000000000000000000C /* FileRowView.swift */,
+				AC000000000000000000000D /* InfoPanelView.swift */,
+				AC0000000000000000000010 /* JunkAnalyzer.swift */,
+				AC0000000000000000000011 /* TreemapView.swift */,
+				AC0000000000000000000012 /* OverviewView.swift */,
+				AC0000000000000000000013 /* ScanFiltersView.swift */,
+				AC0000000000000000000014 /* FullDiskAccess.swift */,
+				AC0000000000000000000015 /* FullDiskAccessGuideView.swift */,
+				AC0000000000000000000016 /* AppCommands.swift */,
+				AC000000000000000000000E /* Assets.xcassets */,
+				AC000000000000000000000F /* NcduUI.entitlements */,
+			);
+			path = NcduUI;
+			sourceTree = "<group>";
+		};
+		AB00000000000000000000F3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AB00000000000000000000FE /* NcduUI.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AB00000000000000000000F7 /* NcduUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB00000000000000000000F9 /* Build configuration list for PBXNativeTarget "NcduUI" */;
+			buildPhases = (
+				AB00000000000000000000F4 /* Sources */,
+				AB00000000000000000000F6 /* Frameworks */,
+				AB00000000000000000000F5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NcduUI;
+			productName = NcduUI;
+			productReference = AB00000000000000000000FE /* NcduUI.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AB00000000000000000000F0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					AB00000000000000000000F7 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = AB00000000000000000000F8 /* Build configuration list for PBXProject "NcduUI" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AB00000000000000000000F1;
+			productRefGroup = AB00000000000000000000F3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AB00000000000000000000F7 /* NcduUI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AB00000000000000000000F5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD000000000000000000000E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AB00000000000000000000F4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD0000000000000000000001 /* NcduUIApp.swift in Sources */,
+				BD0000000000000000000002 /* FileNode.swift in Sources */,
+				BD0000000000000000000003 /* ScanOptions.swift in Sources */,
+				BD0000000000000000000004 /* SizeFormatter.swift in Sources */,
+				BD0000000000000000000005 /* DiskScanner.swift in Sources */,
+				BD0000000000000000000006 /* ScanViewModel.swift in Sources */,
+				BD0000000000000000000007 /* ContentView.swift in Sources */,
+				BD0000000000000000000008 /* WelcomeView.swift in Sources */,
+				BD0000000000000000000009 /* ScanProgressView.swift in Sources */,
+				BD000000000000000000000A /* BreadcrumbView.swift in Sources */,
+				BD000000000000000000000B /* ColumnBrowserView.swift in Sources */,
+				BD000000000000000000000C /* FileRowView.swift in Sources */,
+				BD000000000000000000000D /* InfoPanelView.swift in Sources */,
+				BD0000000000000000000010 /* JunkAnalyzer.swift in Sources */,
+				BD0000000000000000000011 /* TreemapView.swift in Sources */,
+				BD0000000000000000000012 /* OverviewView.swift in Sources */,
+				BD0000000000000000000013 /* ScanFiltersView.swift in Sources */,
+				BD0000000000000000000014 /* FullDiskAccess.swift in Sources */,
+				BD0000000000000000000015 /* FullDiskAccessGuideView.swift in Sources */,
+				BD0000000000000000000016 /* AppCommands.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AB00000000000000000000FA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AB00000000000000000000FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		AB00000000000000000000FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = NcduUI/NcduUI.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.felix.NcduUI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AB00000000000000000000FD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = NcduUI/NcduUI.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.felix.NcduUI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AB00000000000000000000F8 /* Build configuration list for PBXProject "NcduUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB00000000000000000000FA /* Debug */,
+				AB00000000000000000000FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB00000000000000000000F9 /* Build configuration list for PBXNativeTarget "NcduUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB00000000000000000000FC /* Debug */,
+				AB00000000000000000000FD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AB00000000000000000000F0 /* Project object */;
+}
