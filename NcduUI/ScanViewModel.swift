@@ -51,6 +51,8 @@ final class ScanViewModel {
     var itemPendingTrash: FileNode?
 
     private var scanner: DiskScanner?
+    private var cleanupAnalysisGeneration = 0
+    private var cleanupAnalysisTask: Task<Void, Never>?
     private let recentsKey = "RecentFolders"
     private let fdaBannerKey = "DismissedFDABanner"
     private let maxRecents = 8
@@ -83,6 +85,9 @@ final class ScanViewModel {
         self.progress = ScanProgress()
         self.phase = .scanning
         self.focusedNode = nil
+        self.cleanup = nil
+        cancelCleanupAnalysis()
+        cleanupAnalysisGeneration += 1
         invalidateSortCache()
         addRecent(url)
 
@@ -125,10 +130,23 @@ final class ScanViewModel {
 
     func analyzeCleanup() {
         guard let root else { return }
-        Task.detached(priority: .userInitiated) {
-            let report = JunkAnalyzer.analyze(root: root)
-            await MainActor.run { self.cleanup = report }
+        cancelCleanupAnalysis()
+        cleanupAnalysisGeneration += 1
+        let generation = cleanupAnalysisGeneration
+        cleanup = nil
+
+        cleanupAnalysisTask = Task(priority: .userInitiated) { [root] in
+            let report = await Task.detached(priority: .userInitiated) {
+                JunkAnalyzer.analyze(root: root)
+            }.value
+            guard !Task.isCancelled, generation == cleanupAnalysisGeneration else { return }
+            cleanup = report
         }
+    }
+
+    private func cancelCleanupAnalysis() {
+        cleanupAnalysisTask?.cancel()
+        cleanupAnalysisTask = nil
     }
 
     // MARK: - Column navigation
@@ -502,15 +520,21 @@ final class ScanViewModel {
             return
         }
 
-        parent.children.removeAll { $0 === node }
+        cancelCleanupAnalysis()
+        cleanupAnalysisGeneration += 1
+        cleanup = nil
 
-        let removedSize = node.size, removedASize = node.asize, removedItems = node.items + 1
-        var ancestor: FileNode? = parent
-        while let a = ancestor {
-            a.size &-= removedSize
-            a.asize &-= removedASize
-            a.items -= removedItems
-            ancestor = a.parent
+        TreeLock.withLock {
+            parent.children.removeAll { $0 === node }
+
+            let removedSize = node.size, removedASize = node.asize, removedItems = node.items + 1
+            var ancestor: FileNode? = parent
+            while let a = ancestor {
+                a.size &-= removedSize
+                a.asize &-= removedASize
+                a.items -= removedItems
+                ancestor = a.parent
+            }
         }
 
         // Fix navigation if a column directory was removed.

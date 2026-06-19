@@ -1,5 +1,16 @@
 import Foundation
 
+/// Serializes reads (cleanup analysis) and structural writes (trash) on the tree.
+enum TreeLock {
+    private static let lock = NSLock()
+
+    static func withLock<R>(_ body: () -> R) -> R {
+        lock.lock()
+        defer { lock.unlock() }
+        return body()
+    }
+}
+
 /// Flags mirroring ncdu's `struct dir` flags (see reference/ncdu/src/global.h).
 struct FileFlags: OptionSet, Sendable {
     let rawValue: Int

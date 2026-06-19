@@ -126,37 +126,39 @@ enum JunkAnalyzer {
     }
 
     static func analyze(root: FileNode, minSize: Int64 = 64 * 1024) -> CleanupReport {
-        var byCategory: [JunkCategory: [FileNode]] = [:]
-        var allFiles: [FileNode] = []
-        var allFolders: [FileNode] = []
+        TreeLock.withLock {
+            var byCategory: [JunkCategory: [FileNode]] = [:]
+            var allFiles: [FileNode] = []
+            var allFolders: [FileNode] = []
 
-        func visit(_ node: FileNode) {
-            if let category = classify(node), node.size >= minSize {
-                byCategory[category, default: []].append(node)
-                // Don't descend into a matched folder.
-                return
+            func visit(_ node: FileNode) {
+                if let category = classify(node), node.size >= minSize {
+                    byCategory[category, default: []].append(node)
+                    // Don't descend into a matched folder.
+                    return
+                }
+                if node.isDirectory {
+                    if node.parent != nil { allFolders.append(node) }
+                    for child in node.children { visit(child) }
+                } else {
+                    allFiles.append(node)
+                }
             }
-            if node.isDirectory {
-                if node.parent != nil { allFolders.append(node) }
-                for child in node.children { visit(child) }
-            } else {
-                allFiles.append(node)
-            }
+            for child in root.children { visit(child) }
+
+            var report = CleanupReport()
+            report.groups = byCategory
+                .map { JunkGroup(category: $0.key, nodes: $0.value.sorted { $0.size > $1.size }) }
+                .filter { $0.totalSize > 0 }
+                .sorted {
+                    $0.totalSize != $1.totalSize
+                        ? $0.totalSize > $1.totalSize
+                        : $0.category.order < $1.category.order
+                }
+
+            report.largestFiles = Array(allFiles.sorted { $0.size > $1.size }.prefix(8))
+            report.largestFolders = Array(allFolders.sorted { $0.size > $1.size }.prefix(8))
+            return report
         }
-        for child in root.children { visit(child) }
-
-        var report = CleanupReport()
-        report.groups = byCategory
-            .map { JunkGroup(category: $0.key, nodes: $0.value.sorted { $0.size > $1.size }) }
-            .filter { $0.totalSize > 0 }
-            .sorted {
-                $0.totalSize != $1.totalSize
-                    ? $0.totalSize > $1.totalSize
-                    : $0.category.order < $1.category.order
-            }
-
-        report.largestFiles = Array(allFiles.sorted { $0.size > $1.size }.prefix(8))
-        report.largestFolders = Array(allFolders.sorted { $0.size > $1.size }.prefix(8))
-        return report
     }
 }
