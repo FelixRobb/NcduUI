@@ -68,8 +68,16 @@ final class FileNode: Identifiable, @unchecked Sendable {
     /// Resolved destination for symlinks, if available.
     var symlinkTarget: String?
 
-    weak var parent: FileNode?
+    /// Raw (non-retaining) parent pointer, like ncdu's `struct dir.parent`.
+    /// The tree owns nodes through `children`, so a parent always outlives its
+    /// descendants; aggregation walks this chain millions of times, so it must
+    /// not pay ARC/weak-table overhead. The UI never walks it (see `path`).
+    unowned(unsafe) var parent: FileNode?
     var children: [FileNode]
+
+    /// Next node sharing the same inode (circular list), used only transiently
+    /// during hard-link size accounting. Mirrors ncdu's `struct dir.hlnk`.
+    unowned(unsafe) var hlnk: FileNode?
 
     init(
         name: String,

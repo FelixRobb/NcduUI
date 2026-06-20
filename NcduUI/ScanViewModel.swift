@@ -51,6 +51,7 @@ final class ScanViewModel {
     var itemPendingTrash: FileNode?
 
     private var scanner: DiskScanner?
+    @ObservationIgnored private var progressRelay: ScanProgressRelay?
     private var cleanupAnalysisGeneration = 0
     private var cleanupAnalysisTask: Task<Void, Never>?
     private let recentsKey = "RecentFolders"
@@ -93,12 +94,17 @@ final class ScanViewModel {
 
         let path = url.path
         let filters = self.filters
+        let relay = ScanProgressRelay { [weak self] update in
+            self?.progress = update
+        }
+        progressRelay = relay
         Task { [weak self] in
             let result = await scanner.scan(rootPath: path, filters: filters) { progress in
-                Task { @MainActor in self?.progress = progress }
+                relay.post(progress)
             }
             await MainActor.run {
                 guard let self else { return }
+                self.progressRelay = nil
                 if result.wasCancelled {
                     self.phase = self.root == nil ? .welcome : .ready
                     return

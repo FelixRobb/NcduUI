@@ -3,9 +3,17 @@ import Darwin
 
 /// Live progress emitted while scanning.
 struct ScanProgress: Sendable {
+    enum Phase: Sendable {
+        case scanning
+        case aggregating
+    }
+
+    var phase: Phase = .scanning
     var items: Int = 0
     var totalSize: Int64 = 0
     var currentPath: String = ""
+    /// Nodes processed so far during aggregation (0 while scanning).
+    var aggregatedItems: Int = 0
 }
 
 /// Outcome of a scan.
@@ -81,7 +89,13 @@ final class DiskScanner: @unchecked Sendable {
             return ScanResult(root: nil, wasCancelled: true)
         }
 
-        aggregate(root: root)
+        reportAggregating(aggregated: 0, progress: progress)
+        aggregate(root: root, progress: progress)
+
+        if isCancelled {
+            return ScanResult(root: nil, wasCancelled: true)
+        }
+
         progress(counter)
         return ScanResult(root: root)
     }
@@ -143,7 +157,9 @@ final class DiskScanner: @unchecked Sendable {
         progress: @escaping @Sendable (ScanProgress) -> Void
     ) {
         let queue = WorkQueue(seed: (root, rootPath))
-        let workerCount = max(2, min(8, ProcessInfo.processInfo.activeProcessorCount))
+        // Directory I/O on APFS parallelizes well and workers spend much of
+        // their time blocked in lstat/readdir, so scale to every core.
+        let workerCount = max(4, ProcessInfo.processInfo.activeProcessorCount)
         let group = DispatchGroup()
         let pool = DispatchQueue(label: "com.ncduui.scan.workers", attributes: .concurrent)
 
@@ -178,9 +194,19 @@ final class DiskScanner: @unchecked Sendable {
         }
         defer { closedir(dir) }
 
+        // Accumulate this directory's contribution locally and merge into the
+        // shared counter at most a few times per directory, so 18 workers don't
+        // serialize on the progress lock for every single file.
+        var localItems = 0
+        var localSize: Int64 = 0
+        var lastPath = path
+
         var subdirs: [WorkItem] = []
         while let entp = readdir(dir) {
-            if isCancelled { return subdirs }
+            if isCancelled {
+                flushProgress(items: localItems, size: localSize, path: lastPath, progress: progress)
+                return subdirs
+            }
             let name = direntName(entp)
             if name == "." || name == ".." || name.isEmpty { continue }
 
@@ -197,7 +223,15 @@ final class DiskScanner: @unchecked Sendable {
 
             let child = makeNode(name: name, path: childPath, st: st, parent: node)
             node.children.append(child)
-            tick(path: childPath, size: child.ownSize, progress: progress)
+            localItems += 1
+            localSize += child.ownSize
+            lastPath = childPath
+            // Keep progress live inside very large directories.
+            if localItems & 0x1FFF == 0 {
+                flushProgress(items: localItems, size: localSize, path: lastPath, progress: progress)
+                localItems = 0
+                localSize = 0
+            }
 
             // Excluded by glob pattern.
             if !filters.excludePatterns.isEmpty, matchesExclude(childPath) {
@@ -227,6 +261,7 @@ final class DiskScanner: @unchecked Sendable {
 
             subdirs.append((child, childPath))
         }
+        flushProgress(items: localItems, size: localSize, path: lastPath, progress: progress)
         return subdirs
     }
 
@@ -288,9 +323,14 @@ final class DiskScanner: @unchecked Sendable {
         return node
     }
 
-    private func tick(path: String, size: Int64, progress: @escaping @Sendable (ScanProgress) -> Void) {
+    /// Merges a worker's locally-accumulated batch into the shared counter.
+    /// Called a few times per directory rather than once per file, so the lock
+    /// is cheap even with many workers.
+    private func flushProgress(items: Int, size: Int64, path: String, progress: @escaping @Sendable (ScanProgress) -> Void) {
+        guard items > 0 else { return }
         counterLock.lock()
-        counter.items += 1
+        counter.phase = .scanning
+        counter.items += items
         counter.totalSize += size
         counter.currentPath = path
 
@@ -304,15 +344,39 @@ final class DiskScanner: @unchecked Sendable {
         if let snapshot { progress(snapshot) }
     }
 
+    private func reportAggregating(aggregated: Int, progress: @escaping @Sendable (ScanProgress) -> Void) {
+        counterLock.lock()
+        counter.phase = .aggregating
+        counter.aggregatedItems = aggregated
+        counter.currentPath = ""
+        let snapshot = counter
+        counterLock.unlock()
+        progress(snapshot)
+    }
+
     // MARK: - Aggregation (ports dir_mem.c hard-link accounting)
 
     private struct InodeKey: Hashable { let dev: UInt64; let ino: UInt64 }
 
     /// Computes aggregate sizes/items for every directory, deduplicating hard
     /// links so a shared inode is counted once per ancestor subtree.
-    private func aggregate(root: FileNode) {
-        var links: [InodeKey: [FileNode]] = [:]
+    ///
+    /// Ports ncdu's `addparentstats` (util.c) and `hlink_check` (dir_mem.c)
+    /// 1:1: each item's own size is pushed up its parent chain, and hard links
+    /// are tracked through a circular `hlnk` list so a shared inode contributes
+    /// to each ancestor directory exactly once. The ancestor walk for hard links
+    /// terminates as soon as a covering ancestor is found, which keeps large
+    /// link groups (e.g. Xcode/CoreSimulator runtimes) from blowing up.
+    private func aggregate(root: FileNode, progress: @escaping @Sendable (ScanProgress) -> Void) {
+        /// Representative node (first seen) for each inode, ncdu's `links` table.
+        var linkRep: [InodeKey: FileNode] = [:]
+        var stack: [FileNode] = root.children.reversed()
+        var visited = 0
+        var lastReport = DispatchTime.now()
+        let reportInterval: UInt64 = 100_000_000 // 100ms
+        let reportStride = 25_000
 
+        /// Ports `addparentstats`: add a contribution to every ancestor.
         func addParentStats(_ start: FileNode?, size: Int64, asize: Int64, items: Int) {
             var d = start
             while let n = d {
@@ -323,39 +387,52 @@ final class DiskScanner: @unchecked Sendable {
             }
         }
 
-        func isAncestor(_ candidate: FileNode, of node: FileNode) -> Bool {
-            var p = node.parent
-            while let n = p {
-                if n === candidate { return true }
-                p = n.parent
+        /// Ports `hlink_check`: insert `d` into the circular `hlnk` list for its
+        /// inode, then add its size only to the ancestors that don't already
+        /// contain another link to the same inode (stopping at the first one).
+        func hlinkCheck(_ d: FileNode) {
+            let key = InodeKey(dev: d.dev, ino: d.ino)
+            if let t = linkRep[key] {
+                d.hlnk = (t.hlnk == nil) ? t : t.hlnk
+                t.hlnk = d
+            } else {
+                linkRep[key] = d
             }
-            return false
+
+            var stop = false
+            var par = d.parent
+            while !stop, let p = par {
+                // Has another link to this inode already counted toward `p`?
+                if let first = d.hlnk {
+                    var t: FileNode? = first
+                    while let tt = t, tt !== d {
+                        var pt = tt.parent
+                        while let anc = pt {
+                            if anc === p { stop = true; break }
+                            pt = anc.parent
+                        }
+                        if stop { break }
+                        t = tt.hlnk
+                    }
+                }
+                if !stop {
+                    p.size = p.size &+ d.ownSize
+                    p.asize = p.asize &+ d.ownASize
+                }
+                par = p.parent
+            }
         }
 
-        func visit(_ node: FileNode) {
+        func process(_ node: FileNode) {
+            // Don't add size/asize for hard-link candidates here; hlinkCheck
+            // takes care of it, matching ncdu's item() dispatch.
             if node.flags.contains(.hlnkC) {
-                let key = InodeKey(dev: node.dev, ino: node.ino)
-                var group = links[key] ?? []
-                // Count the item itself in every ancestor.
                 addParentStats(node.parent, size: 0, asize: 0, items: 1)
-                // Add its size only to ancestors that don't already contain a
-                // link to the same inode.
-                var par = node.parent
-                while let p = par {
-                    let alreadyCounted = group.contains { isAncestor(p, of: $0) }
-                    if !alreadyCounted {
-                        p.size = p.size &+ node.ownSize
-                        p.asize = p.asize &+ node.ownASize
-                    }
-                    par = p.parent
-                }
-                group.append(node)
-                links[key] = group
+                hlinkCheck(node)
             } else {
                 addParentStats(node.parent, size: node.ownSize, asize: node.ownASize, items: 1)
             }
 
-            // Propagate read errors up to the root as sub-errors.
             if node.flags.contains(.err) {
                 var p = node.parent
                 while let n = p {
@@ -364,10 +441,22 @@ final class DiskScanner: @unchecked Sendable {
                 }
             }
 
-            for child in node.children { visit(child) }
+            if node.isDirectory {
+                stack.append(contentsOf: node.children.reversed())
+            }
         }
 
-        for child in root.children { visit(child) }
+        while let node = stack.popLast() {
+            if isCancelled { return }
+            process(node)
+            visited += 1
+            let now = DispatchTime.now()
+            if visited % reportStride == 0
+                || now.uptimeNanoseconds - lastReport.uptimeNanoseconds > reportInterval {
+                lastReport = now
+                reportAggregating(aggregated: visited, progress: progress)
+            }
+        }
     }
 
     // MARK: - Low-level helpers
