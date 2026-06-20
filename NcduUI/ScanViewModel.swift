@@ -312,6 +312,11 @@ final class ScanViewModel {
         options.sizeMode == .disk ? node.size : node.asize
     }
 
+    /// Snapshot a directory's children for display. Serialized with trash updates.
+    func children(of dir: FileNode) -> [FileNode] {
+        TreeLock.withLock { dir.children }
+    }
+
     /// Captures everything that affects the sorted/filtered child list except the
     /// search query, so the cache can be invalidated only when one of these changes.
     private struct SortSignature: Equatable {
@@ -346,32 +351,34 @@ final class ScanViewModel {
     }
 
     private func sortedChildren(of dir: FileNode) -> [FileNode] {
-        let signature = SortSignature(
-            sortColumn: options.sortColumn,
-            sortDescending: options.sortDescending,
-            groupDirectoriesFirst: options.groupDirectoriesFirst,
-            naturalSort: options.naturalSort,
-            sizeMode: options.sizeMode,
-            showHidden: options.showHidden,
-            minimumSize: options.minimumSize,
-            childCount: dir.children.count
-        )
-        let key = ObjectIdentifier(dir)
-        if let cached = sortCache[key], cached.signature == signature {
-            return cached.items
-        }
+        TreeLock.withLock {
+            let signature = SortSignature(
+                sortColumn: options.sortColumn,
+                sortDescending: options.sortDescending,
+                groupDirectoriesFirst: options.groupDirectoriesFirst,
+                naturalSort: options.naturalSort,
+                sizeMode: options.sizeMode,
+                showHidden: options.showHidden,
+                minimumSize: options.minimumSize,
+                childCount: dir.children.count
+            )
+            let key = ObjectIdentifier(dir)
+            if let cached = sortCache[key], cached.signature == signature {
+                return cached.items
+            }
 
-        var items = dir.children
-        if !options.showHidden {
-            items = items.filter { !isHidden($0) }
-        }
-        if options.minimumSize > 0 {
-            items = items.filter { size(of: $0) >= options.minimumSize || $0.isDirectory && containsLargeDescendant($0) }
-        }
-        items.sort(by: compare)
+            var items = dir.children
+            if !options.showHidden {
+                items = items.filter { !isHidden($0) }
+            }
+            if options.minimumSize > 0 {
+                items = items.filter { size(of: $0) >= options.minimumSize || $0.isDirectory && containsLargeDescendant($0) }
+            }
+            items.sort(by: compare)
 
-        sortCache[key] = (signature, items)
-        return items
+            sortCache[key] = (signature, items)
+            return items
+        }
     }
 
     /// Case-insensitive substring match. Uses a cheap ASCII fast path and only
@@ -412,7 +419,7 @@ final class ScanViewModel {
     }
 
     func maxChildSize(of dir: FileNode) -> Int64 {
-        dir.children.map { size(of: $0) }.max() ?? 0
+        TreeLock.withLock { dir.children.map { size(of: $0) }.max() ?? 0 }
     }
 
     private func compare(_ x: FileNode, _ y: FileNode) -> Bool {

@@ -188,7 +188,7 @@ final class DiskScanner: @unchecked Sendable {
             var st = stat()
             if lstat(childPath, &st) != 0 {
                 let errNode = FileNode(
-                    name: name, kind: .other, flags: [.err],
+                    name: name, path: childPath, kind: .other, flags: [.err],
                     ownSize: 0, ownASize: 0, dev: 0, ino: 0, nlink: 0, mode: 0, mtime: 0,
                     parent: node)
                 node.children.append(errNode)
@@ -269,6 +269,7 @@ final class DiskScanner: @unchecked Sendable {
 
         let node = FileNode(
             name: name,
+            path: path,
             kind: kind,
             flags: flags,
             ownSize: diskSize,

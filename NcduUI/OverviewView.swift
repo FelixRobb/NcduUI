@@ -7,7 +7,7 @@ struct OverviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 summaryHeader
-                if let root = model.root, !root.children.isEmpty {
+                if let root = model.root, !model.children(of: root).isEmpty {
                     compositionCard(root: root)
                 }
                 cleanupSection
@@ -54,7 +54,7 @@ struct OverviewView: View {
     private func compositionCard(root: FileNode) -> some View {
         Card(title: "Composition", systemImage: "square.grid.2x2") {
             TreemapView(
-                nodes: root.children,
+                nodes: model.children(of: root),
                 sizeOf: { model.size(of: $0) },
                 selected: model.focusedNode,
                 onSelect: { model.focusedNode = $0 },

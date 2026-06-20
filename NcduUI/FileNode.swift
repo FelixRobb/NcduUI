@@ -1,6 +1,6 @@
 import Foundation
 
-/// Serializes reads (cleanup analysis) and structural writes (trash) on the tree.
+/// Serializes structural reads (column lists) and writes (trash) on the tree.
 enum TreeLock {
     private static let lock = NSLock()
 
@@ -41,6 +41,8 @@ final class FileNode: Identifiable, @unchecked Sendable {
     let id = UUID()
 
     let name: String
+    /// Absolute filesystem path, fixed at creation so UI never walks `parent`.
+    let path: String
     let kind: NodeKind
     var flags: FileFlags
 
@@ -66,11 +68,12 @@ final class FileNode: Identifiable, @unchecked Sendable {
     /// Resolved destination for symlinks, if available.
     var symlinkTarget: String?
 
-    unowned(unsafe) var parent: FileNode?
+    weak var parent: FileNode?
     var children: [FileNode]
 
     init(
         name: String,
+        path: String,
         kind: NodeKind,
         flags: FileFlags,
         ownSize: Int64,
@@ -83,6 +86,7 @@ final class FileNode: Identifiable, @unchecked Sendable {
         parent: FileNode? = nil
     ) {
         self.name = name
+        self.path = path
         self.kind = kind
         self.flags = flags
         self.ownSize = ownSize
@@ -106,23 +110,6 @@ final class FileNode: Identifiable, @unchecked Sendable {
 
     var mtimeDate: Date? {
         mtime > 0 ? Date(timeIntervalSince1970: TimeInterval(mtime)) : nil
-    }
-
-    /// Absolute filesystem path, reconstructed by walking up to the root.
-    var path: String {
-        var components: [String] = []
-        var node: FileNode? = self
-        while let n = node {
-            components.append(n.name)
-            node = n.parent
-        }
-        components.reverse()
-        // The root node's name is the absolute path of the scan target.
-        guard let first = components.first else { return "/" }
-        if components.count == 1 { return first }
-        let rest = components.dropFirst().joined(separator: "/")
-        if first == "/" { return "/" + rest }
-        return first + "/" + rest
     }
 
     var url: URL { URL(fileURLWithPath: path) }
