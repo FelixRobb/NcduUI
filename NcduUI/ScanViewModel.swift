@@ -579,3 +579,46 @@ final class ScanViewModel {
         UserDefaults.standard.set(recentFolders.map { $0.path }, forKey: recentsKey)
     }
 }
+
+/// Coalesces high-frequency scan progress updates onto the main actor without
+/// flooding it with one `Task` per file.
+private final class ScanProgressRelay: @unchecked Sendable {
+    private let lock = NSLock()
+    private var pending: ScanProgress?
+    private var draining = false
+    private let apply: @MainActor (ScanProgress) -> Void
+
+    init(apply: @escaping @MainActor (ScanProgress) -> Void) {
+        self.apply = apply
+    }
+
+    func post(_ value: ScanProgress) {
+        let start = lock.withLock {
+            pending = value
+            let start = !draining
+            if start { draining = true }
+            return start
+        }
+        guard start else { return }
+        Task { @MainActor [weak self] in
+            await self?.drain()
+        }
+    }
+
+    @MainActor
+    private func drain() async {
+        while true {
+            let snapshot: ScanProgress? = lock.withLock {
+                guard let snapshot = pending else {
+                    draining = false
+                    return nil
+                }
+                pending = nil
+                return snapshot
+            }
+            guard let snapshot else { return }
+            apply(snapshot)
+            await Task.yield()
+        }
+    }
+}
