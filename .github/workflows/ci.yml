@@ -30,6 +30,17 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="-"
 
+      - name: Test
+        run: |
+          xcodebuild test \
+            -project NcduUI.xcodeproj \
+            -scheme NcduUI \
+            -configuration Debug \
+            -derivedDataPath build/DerivedData \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="-"
+
       - name: Package zip
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         id: package

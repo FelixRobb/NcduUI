@@ -310,12 +310,11 @@ final class ScanViewModel {
     // MARK: - Sorting & filtering (ports dirlist.c)
 
     func isHidden(_ node: FileNode) -> Bool {
-        guard let first = node.name.first else { return false }
-        return first == "." || node.name.hasSuffix("~")
+        NodeSorting.isHidden(node)
     }
 
     func size(of node: FileNode) -> Int64 {
-        options.sizeMode == .disk ? node.size : node.asize
+        NodeSorting.displaySize(of: node, mode: options.sizeMode)
     }
 
     /// Snapshot a directory's children for display. Serialized with trash updates.
@@ -353,7 +352,7 @@ final class ScanViewModel {
 
         let query = searchText.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return base }
-        return base.filter { matches($0, query: query) }
+        return base.filter { SearchMatcher.matches(name: $0.name, query: query) }
     }
 
     private func sortedChildren(of dir: FileNode) -> [FileNode] {
@@ -373,44 +372,11 @@ final class ScanViewModel {
                 return cached.items
             }
 
-            var items = dir.children
-            if !options.showHidden {
-                items = items.filter { !isHidden($0) }
-            }
-            if options.minimumSize > 0 {
-                items = items.filter { size(of: $0) >= options.minimumSize || $0.isDirectory && containsLargeDescendant($0) }
-            }
-            items.sort(by: compare)
+            let items = NodeSorting.filterAndSort(children: dir.children, options: options)
 
             sortCache[key] = (signature, items)
             return items
         }
-    }
-
-    /// Case-insensitive substring match. Uses a cheap ASCII fast path and only
-    /// falls back to the locale-aware (and far slower) comparison for queries or
-    /// names that contain non-ASCII characters.
-    private func matches(_ node: FileNode, query: String) -> Bool {
-        if query.utf8.allSatisfy({ $0 < 0x80 }), node.name.utf8.allSatisfy({ $0 < 0x80 }) {
-            return asciiCaseInsensitiveContains(haystack: node.name.utf8, needle: query.utf8)
-        }
-        return node.name.localizedCaseInsensitiveContains(query)
-    }
-
-    private func asciiCaseInsensitiveContains(haystack: String.UTF8View, needle: String.UTF8View) -> Bool {
-        let h = Array(haystack), n = Array(needle)
-        guard !n.isEmpty else { return true }
-        guard h.count >= n.count else { return false }
-        @inline(__always) func lower(_ b: UInt8) -> UInt8 { (b >= 65 && b <= 90) ? b + 32 : b }
-        let last = h.count - n.count
-        var i = 0
-        while i <= last {
-            var j = 0
-            while j < n.count, lower(h[i + j]) == lower(n[j]) { j += 1 }
-            if j == n.count { return true }
-            i += 1
-        }
-        return false
     }
 
     /// Drops cached sort results. Called when the tree changes structurally
@@ -419,52 +385,8 @@ final class ScanViewModel {
         sortCache.removeAll()
     }
 
-    private func containsLargeDescendant(_ dir: FileNode) -> Bool {
-        // Keep directories whose total meets the threshold so the user can drill in.
-        size(of: dir) >= options.minimumSize
-    }
-
     func maxChildSize(of dir: FileNode) -> Int64 {
         TreeLock.withLock { dir.children.map { size(of: $0) }.max() ?? 0 }
-    }
-
-    private func compare(_ x: FileNode, _ y: FileNode) -> Bool {
-        if options.groupDirectoriesFirst, x.isDirectory != y.isDirectory {
-            return x.isDirectory
-        }
-        var r = primaryCompare(x, y)
-        if r == 0 {
-            switch options.sortColumn {
-            case .size: r = cmpInt(x.asize, y.asize)
-            case .apparent: r = cmpInt(x.size, y.size)
-            default: r = cmpInt(x.size, y.size)
-            }
-        }
-        if r == 0 { r = cmpName(x, y) }
-        if r == 0 { r = cmpInt(Int64(x.items), Int64(y.items)) }
-        if options.sortDescending { r = -r }
-        if r == 0 { return cmpName(x, y) < 0 }
-        return r < 0
-    }
-
-    private func primaryCompare(_ x: FileNode, _ y: FileNode) -> Int {
-        switch options.sortColumn {
-        case .size: return cmpInt(x.size, y.size)
-        case .apparent: return cmpInt(x.asize, y.asize)
-        case .name: return cmpName(x, y)
-        case .items: return cmpInt(Int64(x.items), Int64(y.items))
-        case .mtime: return cmpInt(x.mtime, y.mtime)
-        }
-    }
-
-    private func cmpInt(_ a: Int64, _ b: Int64) -> Int { a > b ? 1 : (a == b ? 0 : -1) }
-
-    private func cmpName(_ x: FileNode, _ y: FileNode) -> Int {
-        if options.naturalSort {
-            let r = x.name.localizedStandardCompare(y.name)
-            return r == .orderedAscending ? -1 : (r == .orderedSame ? 0 : 1)
-        }
-        return x.name < y.name ? -1 : (x.name == y.name ? 0 : 1)
     }
 
     // MARK: - Full Disk Access
